@@ -1,24 +1,20 @@
-package org.batfish.mulgraph;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collections;
+package org.batfish.multigraph;
 
 public class RagEdge {
     RagNode src;
-    RagNode vertex;
+    RagNode dst;
     protocol type;
 
     public RagEdge(RagNode s, RagNode v){
-        src = s; vertex = v; type = protocol.NONE;
+        src = s; dst = v; type = protocol.NONE;
     }
 
     public RagEdge(RagNode s, RagNode v, protocol p){
-        src = s; vertex = v; type = p;
+        src = s; dst = v; type = p;
     }
 
     public RagNode getDst() {
-        return vertex;
+        return dst;
     }
 
     public RagNode getSrc() {
@@ -31,11 +27,11 @@ public class RagEdge {
 
     @Override
     public String toString() {
-        return "Edge [src=" + src + ", dst=" + vertex + " type: " + type  + "]";
+        return "Edge [src=" + src + ", dst=" + dst + " type: " + type  + "]";
     }
 
     public RagEdge copy() {
-        return new RagEdge(src, vertex, type);
+        return new RagEdge(src, dst, type);
     }
 
 }

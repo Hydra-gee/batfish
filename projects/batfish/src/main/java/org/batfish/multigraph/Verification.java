@@ -1,4 +1,4 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -43,8 +43,8 @@ public class Verification implements Runnable {
 		//change this to waypointnode
 		List<Node> way = g.outboundNeighbors(src);
 		if (way.size() > 0)
-		removeNode(way.get(0));
-		return alwaysBlocked(src, dst);		
+			removeNode(way.get(0));
+		return alwaysBlocked(src, dst);
 	}
 
 	public double fail(Node srcNode, Node dstNode) {

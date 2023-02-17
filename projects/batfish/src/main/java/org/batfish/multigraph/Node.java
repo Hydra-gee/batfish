@@ -1,4 +1,4 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import java.util.Set;
 import java.util.HashSet;

@@ -1,4 +1,4 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import java.util.HashMap;
 import java.util.List;
@@ -124,8 +124,8 @@ public class buildTpg implements Runnable {
         rpg = ragBuild.getRag();
         buildRouterProtocol();
         initialize();
-    	buildTpgNodes();
-    	buildTpgEdges();
+        buildTpgNodes();
+        buildTpgEdges();
         //long endTime = System.nanoTime();
         setNodes();
         tpg.setPhysicalMap(phyEdgeMap);
@@ -181,6 +181,7 @@ public class buildTpg implements Runnable {
         Map<String, Configuration> allConf = g.getConfigurations();
         TpgNode protNode = null;
         String protName = null;
+        //所有router
         for (String router : allConf.keySet()) {
             Configuration conf = g.getConfigurations().get(router);
             if (conf.getDeviceType() == DeviceType.SWITCH) {

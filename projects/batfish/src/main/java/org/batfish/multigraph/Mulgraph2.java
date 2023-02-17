@@ -1,4 +1,4 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import static org.batfish.symbolic.CommunityVarCollector.collectCommunityVars;
 

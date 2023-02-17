@@ -1,12 +1,10 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.List;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
 //import java.lang.*;
 
 public class Rag {
@@ -17,8 +15,10 @@ public class Rag {
 
     private Map<RagNode, List<RagEdge>> neighbors = new HashMap<>();
 
+    //边数量
     private int nr_edges = 0;
 
+    //顶点数量
     private int nr_vertices = 0;
 
     private RagNode srcTCNode = null;
@@ -106,7 +106,7 @@ public class Rag {
         nr_edges = nr_edges + 2;
     }
 
-    public int outDegree(int vertex) {
+    public int outDegree(RagNode vertex) {
         return neighbors.get(vertex).size();
     }
 
@@ -130,28 +130,32 @@ public class Rag {
     public List<RagEdge> getNeighbors(RagNode vertex) {
         return neighbors.get(vertex);
     }
+
+    //返回指向该顶点的边
     public List<RagEdge> inboundEdges(RagNode inboundVertex) {
         List<RagEdge> inList = new ArrayList<>();
         for (RagNode from : getVertices()) {
             for (RagEdge e : neighbors.get(from))
-                if (e.vertex.equals(inboundVertex))
+                if (e.dst.equals(inboundVertex))
                     inList.add(e);
         }
         return inList;
     }
 
+    //返回该顶点指向的顶点
     public List<RagNode> outboundNeighbors(RagNode vertex) {
         List<RagNode> list = new ArrayList<RagNode>();
         for(RagEdge e: neighbors.get(vertex))
-            list.add(e.vertex);
+            list.add(e.dst);
         return list;
     }
 
+  //返回指向该顶点的顶点
     public List<RagNode> inboundNeighbors(RagNode inboundNode) {
         List<RagNode> inList = new ArrayList<RagNode>();
         for (RagNode from : getVertices()) {
             for (RagEdge e : neighbors.get(from))
-                if (e.vertex.equals(inboundNode))
+                if (e.dst.equals(inboundNode))
                     inList.add(from);
         }
         return inList;
@@ -161,7 +165,7 @@ public class Rag {
       if (from == null || to ==null)
         return false;
       for(RagEdge e :  neighbors.get(from)){
-          if(e.vertex.equals(to))
+          if(e.dst.equals(to))
               return true;
       }
       return false;
@@ -169,7 +173,7 @@ public class Rag {
 
     public RagEdge getEdgeById(String from, String to) {
       for(RagEdge e :  neighbors.get(getVertex(from))){
-          if(e.vertex.getId().equals(to))
+          if(e.dst.getId().equals(to))
               return e;
       }
       return null;
@@ -177,7 +181,7 @@ public class Rag {
 
     public RagEdge getEdge(RagNode from, RagNode to) {
       for(RagEdge e :  neighbors.get(from)){
-          if(e.vertex.equals(to))
+          if(e.dst.equals(to))
               return e;
       }
       return null;

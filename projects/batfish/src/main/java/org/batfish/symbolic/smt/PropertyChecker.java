@@ -79,15 +79,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import org.batfish.mulgraph.Mulgraph;
-import org.batfish.mulgraph.Mulgraph2;
-import org.batfish.mulgraph.buildTpg;
-import org.batfish.mulgraph.Digraph;
-import org.batfish.mulgraph.Tpg;
-import org.batfish.mulgraph.Node;
-import org.batfish.mulgraph.Verification;
-import org.batfish.mulgraph.VerificationTpg;
-import org.batfish.mulgraph.policyName;
+import org.batfish.multigraph.Mulgraph;
+import org.batfish.multigraph.Mulgraph2;
+import org.batfish.multigraph.buildTpg;
+import org.batfish.multigraph.Digraph;
+import org.batfish.multigraph.Tpg;
+import org.batfish.multigraph.Node;
+import org.batfish.multigraph.Verification;
+import org.batfish.multigraph.VerificationTpg;
+import org.batfish.multigraph.policyName;
 
 
 /**

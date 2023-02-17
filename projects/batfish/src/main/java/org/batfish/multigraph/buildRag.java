@@ -1,4 +1,4 @@
-package org.batfish.mulgraph;
+package org.batfish.multigraph;
 
 import java.util.HashMap;
 import java.util.List;
@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import org.batfish.datamodel.Configuration;
@@ -17,14 +16,8 @@ import org.batfish.symbolic.Graph;
 import org.batfish.symbolic.GraphEdge;
 import org.batfish.symbolic.Protocol;
 import org.batfish.datamodel.routing_policy.RoutingPolicy;
-import org.batfish.datamodel.routing_policy.expr.LiteralInt;
-import org.batfish.datamodel.routing_policy.expr.LiteralLong;
 import org.batfish.datamodel.routing_policy.statement.Statement;
 import org.batfish.datamodel.routing_policy.statement.If;
-import org.batfish.datamodel.routing_policy.statement.SetLocalPreference;
-import org.batfish.datamodel.routing_policy.statement.SetWeight;
-import org.batfish.datamodel.routing_policy.statement.SetMetric;
-import org.batfish.datamodel.routing_policy.statement.SetAdministrativeCost;
 
 import org.batfish.datamodel.routing_policy.expr.MatchPrefixSet;
 import org.batfish.datamodel.routing_policy.expr.NamedPrefixSet;
@@ -32,34 +25,17 @@ import org.batfish.datamodel.RouteFilterList;
 import org.batfish.datamodel.RouteFilterLine;
 import org.batfish.datamodel.LineAction;
 
-import org.batfish.datamodel.IpAccessList;
-import org.batfish.datamodel.IpAccessListLine;
-import org.batfish.datamodel.acl.MatchHeaderSpace;
-import org.batfish.datamodel.Interface;
-import org.batfish.datamodel.IpWildcardIpSpace;
 import org.batfish.datamodel.Prefix;
-
-
-import org.batfish.datamodel.routing_policy.expr.Conjunction;
-import org.batfish.datamodel.routing_policy.expr.CallExpr;
-import org.batfish.datamodel.routing_policy.expr.BooleanExpr;
-import org.batfish.datamodel.routing_policy.expr.Disjunction;
-import org.batfish.datamodel.routing_policy.expr.Conjunction;
-import org.batfish.datamodel.routing_policy.expr.WithEnvironmentExpr;
-
-import org.batfish.datamodel.StaticRoute;
-
-import org.batfish.symbolic.AstVisitor;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 public class buildRag implements Runnable {
 	
 	Graph g;
-	Rag rpg;
+	Rag rag;
 
 	Map<String, List<Protocol>> _protocols;
     private Map<String, RagNode> multigraphNode;
+
+    //从路由器到它所对应的全部顶点(每个协议都有一个顶点)的映射
     private Map<String, Set<RagNode>> phyNodeMap;
 
     IpWildcard srcIp;
@@ -79,7 +55,7 @@ public class buildRag implements Runnable {
 
     public buildRag(Graph g, IpWildcard src, IpWildcard dst) {
         this.g = g;
-        rpg = new Rag();
+        rag = new Rag();
         srcIp = src;
         dstIp = dst;
         multigraphNode = new HashMap<>();
@@ -88,7 +64,7 @@ public class buildRag implements Runnable {
 
     public buildRag(Graph g, String src, String dst, IpWildcard srcip, IpWildcard dstip) {
         this.g = g;
-        rpg = new Rag();
+        rag = new Rag();
         srcNodeName = src;
         dstNodeName = dst;
         srcIp = srcip;
@@ -98,7 +74,7 @@ public class buildRag implements Runnable {
     }
 
     public Rag getRag() {
-    	return rpg;
+    	return rag;
     }
 
     public long returnGenerateTime() {
@@ -121,7 +97,7 @@ public class buildRag implements Runnable {
 
     public void run() {
         buildGraph();
-        rpg.taint();
+        rag.taint();
         //draw();
         //printtaint();
         /*
@@ -134,8 +110,8 @@ public class buildRag implements Runnable {
 
     public void draw() {
         System.out.println("Edges");
-        for ( RagNode r : rpg.getNeighborMap().keySet()) {
-            for ( RagEdge e : rpg.getNeighborMap().get(r)) {
+        for ( RagNode r : rag.getNeighborMap().keySet()) {
+            for ( RagEdge e : rag.getNeighborMap().get(r)) {
                 System.out.println(e.getSrc().getId() + "\t" + e.getDst().getId());
             }
         }
@@ -143,7 +119,7 @@ public class buildRag implements Runnable {
 
     public void printtaint() {
         System.out.println("Taint information");
-        for ( RagNode r : rpg.getNeighborMap().keySet()) {
+        for ( RagNode r : rag.getNeighborMap().keySet()) {
             System.out.println(r.getId() + "\t" + r.getTaint());
         }
     }
@@ -187,27 +163,27 @@ public class buildRag implements Runnable {
         if (srcNodeName != null && phyNodeMap.containsKey(srcNodeName)) {
             //System.out.println(srcNodeName);
             srcTC = new RagNode(srcNodeName, protocol.SRC);
-            rpg.add(srcTC);
+            rag.add(srcTC);
             Set<RagNode> allnode = phyNodeMap.get(srcNodeName);
             for (RagNode anode : allnode) {
                 //rpg.add(srcTC, anode, protocol.SRC);
-                rpg.add(anode, srcTC, protocol.SRC);
+                rag.add(anode, srcTC, protocol.SRC);
             }
         }
         if (dstNodeName != null && phyNodeMap.containsKey(dstNodeName)) {
             //System.out.println(dstNodeName);
             dstTC = new RagNode(dstNodeName, protocol.DST);
-            rpg.add(dstTC);
+            rag.add(dstTC);
             Set<RagNode> allnode = phyNodeMap.get(dstNodeName);
             for (RagNode anode : allnode) {
                 //rpg.add(anode, dstTC, protocol.DST);
-                rpg.add(dstTC, anode, protocol.DST);
+                rag.add(dstTC, anode, protocol.DST);
             }
 
         }
         correctSrcDst = false;
         if (srcTC!=null && dstTC!=null) {
-            rpg.setSourceDest(srcTC, dstTC);
+            rag.setSourceDest(srcTC, dstTC);
             correctSrcDst = true;
         }
     }
@@ -272,12 +248,12 @@ public class buildRag implements Runnable {
                             srcnode = bgpName(srcnode);
                             dstnode = bgpName(dstnode);
                             ec.setAS(1);
-              				src = multigraphNode.get(srcnode);
-    						dst = multigraphNode.get(dstnode);
+              				      src = multigraphNode.get(srcnode);
+    						            dst = multigraphNode.get(dstnode);
                             if (g.getIbgpNeighbors().containsKey(e)) {
-                                rpg.add(src, dst, protocol.IBGP);
+                                rag.add(src, dst, protocol.IBGP);
                             } else {
-                                rpg.add(src, dst, protocol.BGP);
+                                rag.add(src, dst, protocol.BGP);
                             }
                             
     					} else if (proto.isOspf()) {
@@ -285,7 +261,7 @@ public class buildRag implements Runnable {
     						dstnode = ospfName(dstnode);
 							src = multigraphNode.get(srcnode);
     						dst = multigraphNode.get(dstnode);
-    						rpg.add(src, dst, protocol.OSPF);
+    						rag.add(src, dst, protocol.OSPF);
                         }
     				}
     			}
@@ -333,7 +309,7 @@ public class buildRag implements Runnable {
                     if (src == null || dst == null) {
                             continue;
                     }
-					rpg.add(src, dst, protocol.BGP);
+					rag.add(src, dst, protocol.BGP);
     			}
     		}
     	}
@@ -357,13 +333,13 @@ public class buildRag implements Runnable {
                 if (proto.isBgp()) {
                     protName = bgpName(router);
                     protNode = new RagNode(protName, protocol.BGP);
-                    rpg.add(protNode);
+                    rag.add(protNode);
                     multigraphNode.put(protName, protNode);
                     phyNodeMap.get(router).add(protNode);
                 } else if (proto.isOspf()) {
                     protName = ospfName(router);
                     protNode = new RagNode(protName, protocol.OSPF);
-                    rpg.add(protNode);
+                    rag.add(protNode);
                     multigraphNode.put(protName, protNode);
                     phyNodeMap.get(router).add(protNode);
 
@@ -380,6 +356,7 @@ public class buildRag implements Runnable {
         return router+"-OSPF";
     }
 
+    //为每个router添加它拥有的网络协议
     public void buildRouterProtocol() {
     	// create physical router to protocols mapping
     	_protocols = new HashMap<>();
