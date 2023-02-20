@@ -211,6 +211,8 @@ public interface IBatfish extends IPluginConsumer {
 
   AnswerElement arcFail(HeaderLocationQuestion q);
 
+  AnswerElement tiramisu(HeaderLocationQuestion q);
+
   AnswerElement smtBlackhole(HeaderQuestion q);
 
   AnswerElement smtBoundedLength(HeaderLocationQuestion q, Integer bound);

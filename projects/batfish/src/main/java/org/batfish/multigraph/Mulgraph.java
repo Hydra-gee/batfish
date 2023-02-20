@@ -661,6 +661,7 @@ public class Mulgraph implements Runnable {
 */
     public void appliesCommunity (String router, RoutingPolicy rp) {
         if (rp != null) {
+//            appliesRP(router,rp.getStatements());
             Configuration conf = g.getConfigurations().get(router);
             //System.out.println("CHECK RP " + rp.getStatements()+"\n*****************");
             for ( Statement st : rp.getStatements() ) {

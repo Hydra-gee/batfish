@@ -69,21 +69,29 @@ public class Verification implements Runnable {
 	*/
 
     public void run() {
+			//检查src是否能与dst通信
         if (policy == policyName.BLOCK) {
         	//System.out.println(src + "\t" + dst + "\t" + alwaysBlocked());
         	alwaysBlocked();
+        	//检查最多容忍的错误数
         } else if (policy == policyName.FAIL) {
         	fail();
+        	//检查路径是否等长
         } else if (policy == policyName.EQUAL) {
         	equalLength();
+        	//检查最长路径
         } else if (policy == policyName.BOUND) {
         	boundLength();
+        	//找优先路径
         } else if (policy == policyName.PREF) {
         	prefPath();
+					//找是否有waypoint
         } else if (policy == policyName.WAY) {
         	alwaysWaypoint();
+        	//找最短路径
         } else if (policy == policyName.BF) {
         	getPath();
+        	//检查src到dst是否存在路径
         } else if (policy == policyName.NONE) {
         	UnreachableTaint unreach = new UnreachableTaint(g);
         	//unreach.isUnreachable(src, dst);

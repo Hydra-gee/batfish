@@ -375,6 +375,10 @@ public class IBatfishTestAdapter implements IBatfish {
     throw new UnsupportedOperationException();
   }
 
+  @Override
+  public AnswerElement tiramisu(HeaderLocationQuestion q) {
+    throw new UnsupportedOperationException();
+  }
 
   @Override
   public AnswerElement smtBlackhole(HeaderQuestion q) {

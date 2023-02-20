@@ -1,0 +1,2 @@
+init-snapshot ./tests/java-smt/networks/ACL1
+get tiramisu verifyTasks = "./verify_tasks/task1"

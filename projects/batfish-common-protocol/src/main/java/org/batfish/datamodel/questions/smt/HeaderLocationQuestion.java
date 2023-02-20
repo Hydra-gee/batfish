@@ -56,6 +56,8 @@ public class HeaderLocationQuestion extends HeaderQuestion {
 
   private static final String PROP_NOT_FAIL_NODE_REGEX = "notFailNodeRegex";
 
+  private static final String PROP_VERIFY_TASKS = "verifyTasks";
+
   private boolean _negate;
 
   private String _finalNodeRegex;
@@ -81,6 +83,8 @@ public class HeaderLocationQuestion extends HeaderQuestion {
   private String _notFailNode2Regex;
 
   private String _notFailNodeRegex;
+
+  private String _verifyTasks;
 
   public HeaderLocationQuestion() {
     super();
@@ -217,6 +221,11 @@ public class HeaderLocationQuestion extends HeaderQuestion {
     return _notFailNodeRegex;
   }
 
+  @JsonProperty(PROP_VERIFY_TASKS)
+  public String getVerifyTasks() {
+    return _verifyTasks;
+  }
+
   @JsonProperty(PROP_NEGATE)
   public void setNegate(boolean negate) {
     _negate = negate;
@@ -280,5 +289,10 @@ public class HeaderLocationQuestion extends HeaderQuestion {
   @JsonProperty(PROP_NOT_FAIL_NODE_REGEX)
   public void setNotFailNodeRegex(String regex) {
     _notFailNodeRegex = regex;
+  }
+
+  @JsonProperty(PROP_VERIFY_TASKS)
+  public void setVerifyTasks(String regex) {
+    _verifyTasks = regex;
   }
 }

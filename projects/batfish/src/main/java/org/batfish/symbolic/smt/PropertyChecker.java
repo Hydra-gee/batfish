@@ -743,6 +743,43 @@ public class PropertyChecker {
       return ips;
   }
 
+  public List<Ips> parseTaskFile(String filename){
+    List<Ips> ips = new ArrayList<>();
+    try {
+      BufferedReader reader = new BufferedReader(new FileReader(filename));
+      String line;
+      String policy = "";
+      Map<String, String> args;
+      while((line = reader.readLine()) != null) {
+        line = line.toLowerCase();
+        args = new HashMap<>();
+        String[] split = line.split(",");
+        for(String t : split) {
+          if (t.contains("=")) {
+            String[] split2 = t.split("=");
+            String argKey = split2[0];
+            String argValue = split2[1];
+            if(argKey.equals("policy")){
+              policy = argValue;
+            }else{
+              args.put(argKey,argValue);
+            }
+          }
+        }
+        //System.out.println(argues);
+        Ips ip_set;
+        ip_set = new Ips(args, policy);
+        //System.out.println("# " + ip_set);
+        ips.add(ip_set);
+      }
+      reader.close();
+    } catch (IOException excep) {
+      System.out.println("Reader IO error");
+      excep.printStackTrace();
+    }
+    return ips;
+  }
+
   public Map<String, policyName> createPolMap() {
       Map<String, policyName> result = new HashMap<>();
       result.put("block", policyName.BLOCK);
@@ -766,6 +803,7 @@ public class PropertyChecker {
    * Check if things are reachable
    */
   public AnswerElement checkGraphReachability(HeaderLocationQuestion q){
+    System.out.println("reach");
     Graph graph = new Graph(_batfish);
     setAllMPLS(graph);
     Map<String, policyName> policyMap = createPolMap();
@@ -837,6 +875,7 @@ public class PropertyChecker {
           ((Mulgraph) makeGraph).setL2Map(l2map);
         }
         pool.execute(makeGraph);
+        System.out.println("breakpoint");
         //((Mulgraph) makeGraph).buildGraph();
       }
       pool.shutdown();
@@ -890,12 +929,13 @@ public class PropertyChecker {
    * Check if things are reachable
    */
   public AnswerElement checkRAG(HeaderLocationQuestion q){
+    System.out.println("RAG");
     Graph graph = new Graph(_batfish);
     Map<String, policyName> policyMap = createPolMap();
     q.setBenchmark(false);
 
     //System.out.println("Layer1 Edges");
-    if (!(q.getFailNodeRegex() == null ||q.getFailNodeRegex() == "")) {      
+    if (!(q.getFailNodeRegex() == null ||q.getFailNodeRegex() == "")) {
 
       //ConcurrentHashMap<String, Tpg> tpgMap
       // = new ConcurrentHashMap<>();
@@ -990,9 +1030,25 @@ public class PropertyChecker {
 
 
   /*
+   * 使用tiramisu检验各类网络策略
+   */
+  public AnswerElement checkTiramisu(HeaderLocationQuestion q){
+    System.out.println("tiramisu...");
+    String taskFilepath = q.getVerifyTasks();
+    Graph graph = new Graph(_batfish);
+    Map<String, policyName> policyMap = createPolMap();
+    q.setBenchmark(false);
+    if(!(taskFilepath == null || taskFilepath.equals(""))){
+      Ips aIp = parseTaskFile(taskFilepath).get(0);
+      System.out.println("breakpoint...");
+    }
+    return new NullAnswer();
+  }
+  /*
    * Check if things are reachable
    */
   public AnswerElement checkGraphFail(HeaderLocationQuestion q){
+    System.out.println("fail");
     Graph graph = new Graph(_batfish);
     /*
     if (!graph.getIbgpNeighbors().isEmpty())
