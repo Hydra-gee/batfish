@@ -1,2 +1,2 @@
 init-snapshot ./topology/p1a
-get tiramisu verifyTasks = "./verify_tasks/task1"
+get tiramisu verifyTasks = "./verify_tasks/p1a_task"

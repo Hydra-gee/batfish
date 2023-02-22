@@ -6,7 +6,11 @@ import com.microsoft.z3.BoolExpr;
 import com.microsoft.z3.Context;
 import com.microsoft.z3.Expr;
 import com.microsoft.z3.Model;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -21,6 +25,10 @@ import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -30,6 +38,7 @@ import javax.annotation.Nullable;
 import org.batfish.common.BatfishException;
 import org.batfish.common.bdd.BDDPacket;
 import org.batfish.common.plugin.IBatfish;
+import org.batfish.common.topology.Layer2Edge;
 import org.batfish.config.Settings;
 import org.batfish.datamodel.AclIpSpace;
 import org.batfish.datamodel.Configuration;
@@ -45,6 +54,14 @@ import org.batfish.datamodel.answers.AnswerElement;
 import org.batfish.datamodel.questions.smt.EnvironmentType;
 import org.batfish.datamodel.questions.smt.HeaderLocationQuestion;
 import org.batfish.datamodel.questions.smt.HeaderQuestion;
+import org.batfish.multigraph.Digraph;
+import org.batfish.multigraph.Mulgraph;
+import org.batfish.multigraph.Mulgraph2;
+import org.batfish.multigraph.Tpg;
+import org.batfish.multigraph.Verification;
+import org.batfish.multigraph.VerificationTpg;
+import org.batfish.multigraph.buildTpg;
+import org.batfish.multigraph.policyName;
 import org.batfish.symbolic.CommunityVar;
 import org.batfish.symbolic.Graph;
 import org.batfish.symbolic.GraphEdge;
@@ -62,33 +79,7 @@ import org.batfish.symbolic.utils.PathRegexes;
 import org.batfish.symbolic.utils.PatternUtils;
 import org.batfish.symbolic.utils.TriFunction;
 import org.batfish.symbolic.utils.Tuple;
-
-import org.batfish.common.topology.Layer2Edge;
-
-
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.util.Arrays;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-
-import org.batfish.multigraph.Mulgraph;
-import org.batfish.multigraph.Mulgraph2;
-import org.batfish.multigraph.buildTpg;
-import org.batfish.multigraph.Digraph;
-import org.batfish.multigraph.Tpg;
-import org.batfish.multigraph.Node;
-import org.batfish.multigraph.Verification;
-import org.batfish.multigraph.VerificationTpg;
-import org.batfish.multigraph.policyName;
-
+import org.batfish.tiramisu.rag.buildRag;
 
 /**
  * A collection of functions to check if various properties hold in the network. The general idea is
@@ -1034,12 +1025,16 @@ public class PropertyChecker {
    */
   public AnswerElement checkTiramisu(HeaderLocationQuestion q){
     System.out.println("tiramisu...");
+    Map<String, policyName> policyMap = createPolMap();
     String taskFilepath = q.getVerifyTasks();
     Graph graph = new Graph(_batfish);
-    Map<String, policyName> policyMap = createPolMap();
     q.setBenchmark(false);
     if(!(taskFilepath == null || taskFilepath.equals(""))){
       Ips aIp = parseTaskFile(taskFilepath).get(0);
+      buildRag makeGraph = new buildRag(graph,aIp.srcip, aIp.dstip);
+      makeGraph.run();
+      makeGraph.getRag().taint();
+      makeGraph.getRag().print();
       System.out.println("breakpoint...");
     }
     return new NullAnswer();
