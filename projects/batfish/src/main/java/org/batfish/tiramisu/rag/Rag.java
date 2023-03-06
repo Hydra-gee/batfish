@@ -9,8 +9,8 @@ import org.batfish.symbolic.Protocol;
 
 @Data
 public class Rag {
-    private int node_num = 0;
-    private int edge_num = 0;
+    private int nodeNum = 0;
+    private int edgeNum = 0;
     private RagNode srcNode = null;
     private RagNode dstNode = null;
     private List<RagNode> nodeList = new ArrayList<>();
