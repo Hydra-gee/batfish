@@ -60,7 +60,6 @@ import org.batfish.multigraph.Mulgraph2;
 import org.batfish.multigraph.Tpg;
 import org.batfish.multigraph.Verification;
 import org.batfish.multigraph.VerificationTpg;
-import org.batfish.multigraph.buildTpg;
 import org.batfish.multigraph.policyName;
 import org.batfish.symbolic.CommunityVar;
 import org.batfish.symbolic.Graph;
@@ -80,7 +79,7 @@ import org.batfish.symbolic.utils.PatternUtils;
 import org.batfish.symbolic.utils.TriFunction;
 import org.batfish.symbolic.utils.Tuple;
 import org.batfish.tiramisu.rag.buildRag;
-
+import org.batfish.tiramisu.tpg.buildTpg;
 /**
  * A collection of functions to check if various properties hold in the network. The general idea is
  * to create a new encoder object for the network, instrument additional properties on top of the
@@ -920,102 +919,102 @@ public class PropertyChecker {
    * Check if things are reachable
    */
   public AnswerElement checkRAG(HeaderLocationQuestion q){
-    System.out.println("RAG");
-    Graph graph = new Graph(_batfish);
-    Map<String, policyName> policyMap = createPolMap();
-    q.setBenchmark(false);
-
-    //System.out.println("Layer1 Edges");
-    if (!(q.getFailNodeRegex() == null ||q.getFailNodeRegex() == "")) {
-
-      //ConcurrentHashMap<String, Tpg> tpgMap
-      // = new ConcurrentHashMap<>();
-
-      String policyPath = q.getFailNodeRegex();
-      String policyType = q.getNotFailNodeRegex();
-      
-      if (policyType == null || policyType =="" || !policyMap.containsKey(policyType)) {
-        System.out.println("Error policy type");
-        return new NullAnswer();
-      }
-
-      policyName thisPolicy =  policyMap.get(policyType);
-      /*
-      List<Ips> ips = getAllIps(policyPath);
-
-      int numThreads = Runtime.getRuntime().availableProcessors();
-      ExecutorService pool = Executors.newFixedThreadPool(numThreads);
-      System.out.println("Start generation");
-      long startTime = System.nanoTime();
-      for (Ips aIp : ips) {
-        Runnable makeGraph = new buildTpg(graph, aIp.ingressNodeRegex, aIp.finalNodeRegex, aIp.srcip, aIp.dstip, tpgMap);
-        pool.execute(makeGraph);
-      }
-      pool.shutdown();
-
-      try {
-          pool.awaitTermination(5000, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-          System.out.println("Graph creation interrupted. EXIT");
-          System.exit(0);
-      }
-      long endTime = System.nanoTime();      
-      long graphGenerationTime = endTime - startTime;
-
-      System.out.println("End generation");
-
-      System.out.println("Start Verification");
-      ExecutorService pool2 = Executors.newFixedThreadPool(numThreads);
-
-      startTime = System.nanoTime();
-      for (String ipKey : tpgMap.keySet()) {
-        Tpg currentGraph = tpgMap.get(ipKey);
-        Runnable veri = new VerificationTpg(currentGraph, thisPolicy);
-        if (currentGraph.getSrc() == null || currentGraph.getDst()== null)
-          continue;
-        ((VerificationTpg) veri).setSrcDstTC(currentGraph.getSrc(), currentGraph.getDst());
-        pool2.execute(veri);
-      }
-      
-      pool2.shutdown();
-
-      try {
-          pool2.awaitTermination(5000, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-          System.out.println("Verifictaion interrupted. EXIT");
-          System.exit(0);
-      }
-      */
-      System.out.println("Start generation");
-      Ips aIp = getAllIps(policyPath).get(0);
-      buildTpg makeGraph = new buildTpg(graph, aIp.ingressNodeRegex, aIp.finalNodeRegex, aIp.srcip, aIp.dstip, null);
-      long startTime = System.nanoTime();
-      makeGraph.run();
-      long endTime = System.nanoTime();      
-      long graphGenerationTime = endTime - startTime;
-
-      System.out.println("End generation");
-
-      System.out.println("Start Verification");
-      Tpg currentGraph = makeGraph.getTpg();
-      //System.out.println("Nodes: " + currentGraph.getVertices());
-      System.out.println("Number of nodes: " + currentGraph.getVertices().size());
-      System.out.println("Number of edges: " + currentGraph.getNumberOfEdges());
-
-      VerificationTpg veri = new VerificationTpg(currentGraph, thisPolicy);
-      veri.setSrcDstTC(currentGraph.getSrc(), currentGraph.getDst());
-      startTime = System.nanoTime();
-      veri.run();
-      endTime = System.nanoTime();      
-      long verificationTime = endTime - startTime;
-      System.out.println("End Verification");
-      System.out.println("Generate time: " + graphGenerationTime/(double)1000000 + " ms" +
-        "\nVerification time: " + verificationTime/(double)1000000 + " ms");
-      
-    }
-    
-    //System.out.println(_batfish.getLayer2Topology().getGraph().edges());
-
+//    System.out.println("RAG");
+//    Graph graph = new Graph(_batfish);
+//    Map<String, policyName> policyMap = createPolMap();
+//    q.setBenchmark(false);
+//
+//    //System.out.println("Layer1 Edges");
+//    if (!(q.getFailNodeRegex() == null ||q.getFailNodeRegex() == "")) {
+//
+//      //ConcurrentHashMap<String, Tpg> tpgMap
+//      // = new ConcurrentHashMap<>();
+//
+//      String policyPath = q.getFailNodeRegex();
+//      String policyType = q.getNotFailNodeRegex();
+//
+//      if (policyType == null || policyType =="" || !policyMap.containsKey(policyType)) {
+//        System.out.println("Error policy type");
+//        return new NullAnswer();
+//      }
+//
+//      policyName thisPolicy =  policyMap.get(policyType);
+//      /*
+//      List<Ips> ips = getAllIps(policyPath);
+//
+//      int numThreads = Runtime.getRuntime().availableProcessors();
+//      ExecutorService pool = Executors.newFixedThreadPool(numThreads);
+//      System.out.println("Start generation");
+//      long startTime = System.nanoTime();
+//      for (Ips aIp : ips) {
+//        Runnable makeGraph = new buildTpg(graph, aIp.ingressNodeRegex, aIp.finalNodeRegex, aIp.srcip, aIp.dstip, tpgMap);
+//        pool.execute(makeGraph);
+//      }
+//      pool.shutdown();
+//
+//      try {
+//          pool.awaitTermination(5000, TimeUnit.SECONDS);
+//      } catch (InterruptedException e) {
+//          System.out.println("Graph creation interrupted. EXIT");
+//          System.exit(0);
+//      }
+//      long endTime = System.nanoTime();
+//      long graphGenerationTime = endTime - startTime;
+//
+//      System.out.println("End generation");
+//
+//      System.out.println("Start Verification");
+//      ExecutorService pool2 = Executors.newFixedThreadPool(numThreads);
+//
+//      startTime = System.nanoTime();
+//      for (String ipKey : tpgMap.keySet()) {
+//        Tpg currentGraph = tpgMap.get(ipKey);
+//        Runnable veri = new VerificationTpg(currentGraph, thisPolicy);
+//        if (currentGraph.getSrc() == null || currentGraph.getDst()== null)
+//          continue;
+//        ((VerificationTpg) veri).setSrcDstTC(currentGraph.getSrc(), currentGraph.getDst());
+//        pool2.execute(veri);
+//      }
+//
+//      pool2.shutdown();
+//
+//      try {
+//          pool2.awaitTermination(5000, TimeUnit.SECONDS);
+//      } catch (InterruptedException e) {
+//          System.out.println("Verifictaion interrupted. EXIT");
+//          System.exit(0);
+//      }
+//      */
+//      System.out.println("Start generation");
+//      Ips aIp = getAllIps(policyPath).get(0);
+//      buildTpg makeGraph = new buildTpg(graph, aIp.ingressNodeRegex, aIp.finalNodeRegex, aIp.srcip, aIp.dstip, null);
+//      long startTime = System.nanoTime();
+//      makeGraph.run();
+//      long endTime = System.nanoTime();
+//      long graphGenerationTime = endTime - startTime;
+//
+//      System.out.println("End generation");
+//
+//      System.out.println("Start Verification");
+//      Tpg currentGraph = makeGraph.getTpg();
+//      //System.out.println("Nodes: " + currentGraph.getVertices());
+//      System.out.println("Number of nodes: " + currentGraph.getVertices().size());
+//      System.out.println("Number of edges: " + currentGraph.getNumberOfEdges());
+//
+//      VerificationTpg veri = new VerificationTpg(currentGraph, thisPolicy);
+//      veri.setSrcDstTC(currentGraph.getSrc(), currentGraph.getDst());
+//      startTime = System.nanoTime();
+//      veri.run();
+//      endTime = System.nanoTime();
+//      long verificationTime = endTime - startTime;
+//      System.out.println("End Verification");
+//      System.out.println("Generate time: " + graphGenerationTime/(double)1000000 + " ms" +
+//        "\nVerification time: " + verificationTime/(double)1000000 + " ms");
+//
+//    }
+//
+//    //System.out.println(_batfish.getLayer2Topology().getGraph().edges());
+//
     return new NullAnswer();
   }
 
@@ -1035,6 +1034,8 @@ public class PropertyChecker {
       makeGraph.run();
       makeGraph.getRag().taint();
       makeGraph.getRag().print();
+      buildTpg makeGraph2 = new buildTpg(graph,aIp.srcip, aIp.dstip);
+      makeGraph2.run();
       System.out.println("breakpoint...");
     }
     return new NullAnswer();
