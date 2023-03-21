@@ -10,12 +10,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.batfish.datamodel.Configuration;
 import org.batfish.datamodel.DeviceType;
 import org.batfish.datamodel.IpWildcard;
+import org.batfish.datamodel.Prefix;
 import org.batfish.symbolic.Graph;
 import org.batfish.symbolic.GraphEdge;
 import org.batfish.symbolic.Protocol;
 import org.batfish.tiramisu.NodeType;
 import org.batfish.tiramisu.rag.Rag;
+import org.batfish.tiramisu.rag.RagNode;
 import org.batfish.tiramisu.rag.buildRag;
+import org.batfish.tiramisu.verify.policy.BLOCK;
 
 public class buildTpg implements Runnable {
 
@@ -84,13 +87,16 @@ public class buildTpg implements Runnable {
         initialize();
         buildTpgNodes();
         buildTpgEdges();
+        setSrcDst();
+        tpg.print();
+        System.out.println(new BLOCK(tpg).verify());
         //long endTime = System.nanoTime();
 //        setNodes();
 //        tpg.setPhysicalMap(phyEdgeMap);
         String key = srcIp.toString() + "-" + dstIp.toString();
-        if (conMap != null && correctSrcDst == true) {
-            conMap.put(key, tpg);
-        }
+//        if (conMap != null && correctSrcDst == true) {
+//            conMap.put(key, tpg);
+//        }
     }
 
     @Override
@@ -147,7 +153,6 @@ public class buildTpg implements Runnable {
     public void buildTpgEdges() {
 
         //TODO: ADD EDGE FROM RIB CORRECTLY BASED ON TAINTS
-        String protName = null, protName1 = null, protName2 = null;
         for (String router:g.getRouters()) {
             //Layers 1 & 2
             for (TpgNode node : tpg.selectNodes(null, null, NodeType.VLAN_IN, router)) {
@@ -161,7 +166,9 @@ public class buildTpg implements Runnable {
                     Protocol.CONNECTED,
                     NodeType.VLAN_OUT,
                     null)) {
-                    tpg.addEdge(OSPFNodes.get(0), node);
+                    if(tpg.selectNodes(node.getVlanPeerId(), Protocol.OSPF, null, null).size()>0){
+                        tpg.addEdge(OSPFNodes.get(0), node);
+                    }
                 }
             }
             //Routes to the destination
@@ -190,10 +197,47 @@ public class buildTpg implements Runnable {
                 tpg.addEdge(tpg.selectNodes(e.getRouter(), Protocol.BGP, NodeType.NONE, null).get(0),
                     tpg.selectNodes(e.getRouter(), Protocol.OSPF, NodeType.NONE,null).get(0));
             }
-
-            //System.out.println("VRF " + conf.getVrfs());
     }
 
+    public void setSrcDst(){
+        if (srcNodeName == null || srcNodeName.equals("") || dstNodeName == null || dstNodeName.equals(
+            "")) {
+            for (Entry<String, List<GraphEdge>> entry : g.getEdgeMap().entrySet()) {
+                String router = entry.getKey();
+                Configuration conf = g.getConfigurations().get(router);
+                Set<Prefix> prefixes = Graph.getOriginatedNetworks(conf, Protocol.CONNECTED);
+                for (Prefix pp : prefixes) {
+                    if (pp.containsPrefix(srcIp.toPrefix())) {
+                        srcNodeName = router;
+                    }
+                    if (pp.containsPrefix(dstIp.toPrefix())) {
+                        dstNodeName = router;
+                    }
+                }
+            }
+        }
+
+        if (srcNodeName != null) {
+            TpgNode srcNode = new TpgNode(srcNodeName, Protocol.CONNECTED,NodeType.SRC,null);
+            tpg.addNode(srcNode);
+            for(TpgNode n:tpg.selectNodes(srcNodeName,null,null,null)){
+                if(n.getProtocol() == Protocol.BGP || n.getProtocol() == Protocol.OSPF){
+                    if(rag.getNodeMap().get(srcNodeName).get(n.getProtocol()).isTaint()){
+                        tpg.addEdge(srcNode,n);
+                    }
+                }
+            }
+            tpg.setSrcNode(srcNode);
+        }
+        if (dstNodeName != null) {
+            TpgNode dstNode = new TpgNode(dstNodeName, Protocol.CONNECTED,NodeType.DST,null);
+            tpg.addNode(dstNode);
+            for(TpgNode n:tpg.selectNodes(dstNodeName,Protocol.CONNECTED,NodeType.VLAN_IN,null)){
+                tpg.addEdge(n,dstNode);
+            }
+            tpg.setDstNode(dstNode);
+        }
+    }
 //    public void addDependenceGraph(GraphEdge depEdge) {
 //
 //        String prefix = intfName(depEdge.getRouter(), depEdge.getStart().getName());

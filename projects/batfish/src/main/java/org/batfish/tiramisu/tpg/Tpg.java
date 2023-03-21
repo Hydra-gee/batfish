@@ -48,5 +48,16 @@ public class Tpg {
       }
       return resultSet;
     }
+
+    public void print(){
+      for(TpgNode node:nodeSet){
+        node.print();
+        System.out.println("edges:");
+        for(TpgEdge e:node.getOutEdges()){
+          e.getDst().print();
+        }
+        System.out.println("______________");
+      }
+    }
 }
 

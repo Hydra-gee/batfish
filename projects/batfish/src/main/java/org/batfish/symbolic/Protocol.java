@@ -109,4 +109,20 @@ public class Protocol {
   public int hashCode() {
     return _type != null ? _type.ordinal() : 0;
   }
+
+  @Override
+  public String toString(){
+    if(_type == Type.BEST){
+      return "BEST";
+    }else if(_type == Type.OSPF){
+      return "OSPF";
+    }else if(_type == Type.BGP){
+      return "BGP";
+    }else if(_type == Type.CONNECTED){
+      return "CONNECTED";
+    }else if(_type == Type.STATIC){
+      return "STATIC";
+    }
+    return "";
+  }
 }
