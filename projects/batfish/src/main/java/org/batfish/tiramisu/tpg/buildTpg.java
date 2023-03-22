@@ -18,6 +18,7 @@ import org.batfish.tiramisu.NodeType;
 import org.batfish.tiramisu.rag.Rag;
 import org.batfish.tiramisu.rag.RagNode;
 import org.batfish.tiramisu.rag.buildRag;
+import org.batfish.tiramisu.verify.PolicyVerify;
 import org.batfish.tiramisu.verify.policy.BLOCK;
 
 public class buildTpg implements Runnable {
@@ -89,7 +90,7 @@ public class buildTpg implements Runnable {
         buildTpgEdges();
         setSrcDst();
         tpg.print();
-        System.out.println(new BLOCK(tpg).verify());
+        new PolicyVerify(tpg).verify("WAYPOINT");
         //long endTime = System.nanoTime();
 //        setNodes();
 //        tpg.setPhysicalMap(phyEdgeMap);
