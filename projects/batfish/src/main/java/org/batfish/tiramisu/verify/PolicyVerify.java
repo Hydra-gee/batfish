@@ -2,6 +2,7 @@ package org.batfish.tiramisu.verify;
 
 import org.batfish.tiramisu.tpg.Tpg;
 import org.batfish.tiramisu.verify.model.TDFS.TDFS;
+import org.batfish.tiramisu.verify.model.TPVP.Tpvp;
 
 /**
  * @Author hydra
@@ -22,9 +23,14 @@ public class PolicyVerify {
       case "WAYPOINT":
         result = tdfs.TDFS_verify("d");
         break;
-    default:
-      System.out.println("NO POLICY FOUND");
-      break;
+      case "PREF":
+        break;
+      case "SHORT":
+        new Tpvp(g).shortest();
+        break;
+      default:
+        System.out.println("NO POLICY FOUND");
+        break;
     }
     System.out.println("result:"+result);
   }
