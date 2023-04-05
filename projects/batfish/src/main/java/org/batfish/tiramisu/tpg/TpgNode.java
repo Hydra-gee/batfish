@@ -13,7 +13,9 @@ public class TpgNode {
     private boolean taint;
     private NodeType vlanType;
     private String vlanPeerId;
+    private boolean valid;
     private Set<TpgEdge> outEdges = new LinkedHashSet<>();
+    private Set<TpgEdge> inEdges = new LinkedHashSet<>();
     public TpgNode(String deviceId,Protocol protocol){
         this.deviceId = deviceId;
         this.protocol = protocol;
@@ -37,6 +39,10 @@ public class TpgNode {
             }
         }
         return false;
+    }
+
+    @Override public String toString(){
+        return deviceId + " " + protocol + " " + vlanType + " " + vlanPeerId;
     }
 
     public void print(){

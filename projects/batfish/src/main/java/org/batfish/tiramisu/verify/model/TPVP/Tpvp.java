@@ -175,7 +175,7 @@ public class Tpvp {
     boolean firstIteration = true;
     while (changed) {
       changed = false;
-      for(TpgNode u : g.getNodeSet()) {
+      for(TpgNode u : g.selectNodes(null,null,null,null)) {
         boolean curChanged = false;
         for(TpgEdge e1 : u.getOutEdges()) {
           TpgNode v = e1.getDst();

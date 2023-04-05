@@ -226,7 +226,7 @@ public class Verification implements Runnable {
 			mayReach = false;
 			for (Node blockNode : g.communityBlockNodes.get(comm)) {
 				if (!unreach.isUnreachable(blockNode, dst)) {
-					mayReach = true;;
+					mayReach = true;
 				}	
 			}
 

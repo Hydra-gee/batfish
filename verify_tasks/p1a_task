@@ -1,1 +1,1 @@
-smt-reachability,srcIps=47.0.0.0/8,dstIps=48.0.0.0/8,ingressNodeRegex=Y,finalNodeRegex=Z,policy=pref
+smt-reachability,srcIps=47.0.0.0/8,dstIps=48.0.0.0/8,ingressNodeRegex=Y,finalNodeRegex=Z,policy=equal

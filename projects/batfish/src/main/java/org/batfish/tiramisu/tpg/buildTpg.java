@@ -89,8 +89,8 @@ public class buildTpg implements Runnable {
         buildTpgNodes();
         buildTpgEdges();
         setSrcDst();
-        tpg.print();
-        new PolicyVerify(tpg).verify("WAYPOINT");
+//        tpg.print();
+//        new PolicyVerify(tpg).verify("WAYPOINT");
         //long endTime = System.nanoTime();
 //        setNodes();
 //        tpg.setPhysicalMap(phyEdgeMap);

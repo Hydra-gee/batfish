@@ -10,13 +10,13 @@ public class TpgPath {
 	EdgeCost ec;
     HashSet<String> nodeNames;
 
-    public TpgPath() {  
+    public TpgPath() {
         pathTpgNodes = new ArrayList<TpgNode>();
         ec = new EdgeCost();
-        nodeNames = new HashSet<>();        
+        nodeNames = new HashSet<>();
     }
 
-    public TpgPath(TpgPath prev) {  
+    public TpgPath(TpgPath prev) {
         pathTpgNodes = new ArrayList<TpgNode>();
         nodeNames = new HashSet<>();
         for (TpgNode vertex : prev.pathTpgNodes) {
@@ -31,18 +31,18 @@ public class TpgPath {
         return nodeNames.contains(node.getId());
     }
 
-    public void add(TpgNode n) {    
+    public void add(TpgNode n) {
         pathTpgNodes.add(0, n);
         nodeNames.add(n.getId());
     }
 
-    public void addEnd(TpgNode n) {    
+    public void addEnd(TpgNode n) {
         pathTpgNodes.add(n);
         nodeNames.add(n.getId());
     }
 
 
-	public void setTpgPath() {	
+	public void setTpgPath() {
 		Collections.reverse(pathTpgNodes);
 	}
 

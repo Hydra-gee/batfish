@@ -2,6 +2,7 @@ package org.batfish.tiramisu.tpg;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,10 @@ import org.batfish.tiramisu.NodeType;
 
 @Data
 public class Tpg {
+  public Map<String, Set<TpgNode>> communityAdded = new HashMap<>();
+  public Set<String> communityBlocked = new HashSet<>();
+  public Map<String, Set<TpgNode>> communityBlockNodes = new HashMap<>();
+  public Map<String, Set<TpgNode>> communityRemoveNodes = new HashMap<>();
     private int nodeNum = 0;
     private TpgNode srcNode = null;
     private TpgNode dstNode = null;
@@ -36,7 +41,8 @@ public class Tpg {
     }
 
     public void addEdge(TpgNode node1,TpgNode node2){
-      node1.getOutEdges().add(new TpgEdge(node1,node2));
+      node1.getOutEdges().add(new TpgEdge(node1,node2,null,null));
+      node2.getInEdges().add(new TpgEdge(node1,node2,null,null));
     }
 
     public List<TpgNode> selectNodes(String router,Protocol protocol,NodeType vlanType,String vlanPeer){
