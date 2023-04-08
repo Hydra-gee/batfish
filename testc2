@@ -1,2 +1,2 @@
 init-snapshot ./tests/java-smt/networks/COMMUNITY1
-get arcRAG failNodeRegex="testcom3", notFailNodeRegex="tpvp"
+get arcRAG failNodeRegex="testcom3", notFailNodeRegex="fail"

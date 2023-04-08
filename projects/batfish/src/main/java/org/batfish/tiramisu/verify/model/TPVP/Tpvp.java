@@ -153,7 +153,7 @@ public class Tpvp {
   }
 
   // return shortest path
-  public void shortest() {
+  public TpgPath shortest(TpgNode src,TpgNode dst) {
     //System.out.println(((Node)src).getId());
     //System.out.println(currWeight);
     for(TpgNode v : g.getNodeSet()) {
@@ -161,11 +161,11 @@ public class Tpvp {
     }
 
     EdgeCost currWeight;
-    weight.put(d, new EdgeCost());
-    weight.get(d).setAD(EdgeCost.protocol_map.get(protocol.DST));
-    nextHop.put(d, d);
-    bestPath.get(d).add(d);
-    hasChanged.put(d, true);
+    weight.put(dst, new EdgeCost());
+    weight.get(dst).setAD(EdgeCost.protocol_map.get(protocol.DST));
+    nextHop.put(dst, dst);
+    bestPath.get(dst).add(dst);
+    hasChanged.put(dst, true);
     // Step 2: Relax all edges |V| - 1 times. A simple
     // shortest path from src to any other Node can
     // have at-most |V| - 1 edges
@@ -212,6 +212,7 @@ public class Tpvp {
       } //break;
       firstIteration = false;
     }
+    return bestPath.get(src);
     //System.out.println(bestPath.get(s));
         /*
         if (weight.get(s).valid) {
@@ -220,4 +221,5 @@ public class Tpvp {
         return null;
         //*/
   }
+
 }

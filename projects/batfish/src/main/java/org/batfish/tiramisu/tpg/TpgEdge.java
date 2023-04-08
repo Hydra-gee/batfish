@@ -11,6 +11,7 @@ public class TpgEdge {
     TpgNode dst;
     NodeType type;
     EdgeCost edgeCost;
+    boolean valid;
 
     @Override
     public int hashCode(){

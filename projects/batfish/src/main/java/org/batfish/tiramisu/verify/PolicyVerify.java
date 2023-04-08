@@ -1,10 +1,12 @@
 package org.batfish.tiramisu.verify;
 
 import org.batfish.tiramisu.tpg.Tpg;
+import org.batfish.tiramisu.tpg.TpgPath;
 import org.batfish.tiramisu.verify.model.ILP.ilpMinCut;
 import org.batfish.tiramisu.verify.model.ILP.ilpPathLength;
 import org.batfish.tiramisu.verify.model.TDFS.TDFS;
 import org.batfish.tiramisu.verify.model.TPVP.Tpvp;
+import org.batfish.tiramisu.verify.model.TPVP.Yen;
 
 /**
  * @Author hydra
@@ -28,9 +30,14 @@ public class PolicyVerify {
         System.out.println("WAY POINT:"+result);
         break;
       case "pref":
+        int i=1;
+        for(TpgPath p:new Yen(g).ksp(g.getSrcNode(),g.getDstNode(),4)){
+          System.out.println("k="+i+"path="+p);
+          i+=1;
+        }
         break;
-      case "short":
-        new Tpvp(g).shortest();
+    case "short":
+        System.out.println(new Tpvp(g).shortest(g.getSrcNode(),g.getDstNode()));
         break;
       case "kfail":
         new ilpMinCut(g).fail();

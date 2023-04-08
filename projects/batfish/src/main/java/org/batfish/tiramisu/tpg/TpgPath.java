@@ -42,6 +42,9 @@ public class TpgPath {
     nodeNames.add(n.getDeviceId());
   }
 
+  public void addPath(TpgPath p){
+    getTpgNodes().addAll(p.getTpgNodes());
+  }
 
   public void setTpgPath() {
     Collections.reverse(pathTpgNodes);
@@ -86,4 +89,15 @@ public class TpgPath {
     return true;
   }
 
+  public TpgPath clone(){
+    return this.clone(0,this.getTpgNodes().size()-1);
+  }
+
+  public TpgPath clone(int from,int to){
+    TpgPath newPath = new TpgPath();
+    for(int i=from;i<=to;i++){
+      newPath.add(pathTpgNodes.get(i));
+    }
+    return newPath;
+  }
 }
