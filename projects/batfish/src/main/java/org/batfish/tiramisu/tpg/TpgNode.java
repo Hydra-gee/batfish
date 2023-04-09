@@ -14,6 +14,7 @@ public class TpgNode {
     private NodeType vlanType;
     private String vlanPeerId;
     private boolean valid;
+    private boolean haveACL;
     private Set<TpgEdge> outEdges = new LinkedHashSet<>();
     private Set<TpgEdge> inEdges = new LinkedHashSet<>();
     public TpgNode(String deviceId,Protocol protocol){
@@ -26,6 +27,15 @@ public class TpgNode {
         this.protocol = protocol;
         this.vlanType = vlanType;
         this.vlanPeerId = peerId;
+        this.haveACL = false;
+    }
+
+    public TpgNode(String deviceId,Protocol protocol,NodeType vlanType,String peerId,boolean acl){
+        this.deviceId = deviceId;
+        this.protocol = protocol;
+        this.vlanType = vlanType;
+        this.vlanPeerId = peerId;
+        this.haveACL = acl;
     }
 
     public boolean compareTo(TpgNode node2){

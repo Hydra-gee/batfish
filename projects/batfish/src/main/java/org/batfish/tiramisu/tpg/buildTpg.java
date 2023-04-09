@@ -1,25 +1,57 @@
 package org.batfish.tiramisu.tpg;
 
+import static org.batfish.symbolic.CommunityVarCollector.collectCommunityVars;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import org.batfish.datamodel.CommunityList;
+import org.batfish.datamodel.CommunityListLine;
 import org.batfish.datamodel.Configuration;
 import org.batfish.datamodel.DeviceType;
+import org.batfish.datamodel.Interface;
+import org.batfish.datamodel.IpAccessList;
+import org.batfish.datamodel.IpAccessListLine;
 import org.batfish.datamodel.IpWildcard;
+import org.batfish.datamodel.IpWildcardIpSpace;
+import org.batfish.datamodel.LineAction;
 import org.batfish.datamodel.Prefix;
+import org.batfish.datamodel.RouteFilterLine;
+import org.batfish.datamodel.RouteFilterList;
+import org.batfish.datamodel.acl.MatchHeaderSpace;
+import org.batfish.datamodel.routing_policy.RoutingPolicy;
+import org.batfish.datamodel.routing_policy.expr.BooleanExpr;
+import org.batfish.datamodel.routing_policy.expr.CallExpr;
+import org.batfish.datamodel.routing_policy.expr.CommunitySetExpr;
+import org.batfish.datamodel.routing_policy.expr.Conjunction;
+import org.batfish.datamodel.routing_policy.expr.LiteralInt;
+import org.batfish.datamodel.routing_policy.expr.LiteralLong;
+import org.batfish.datamodel.routing_policy.expr.MatchCommunitySet;
+import org.batfish.datamodel.routing_policy.expr.MatchPrefixSet;
+import org.batfish.datamodel.routing_policy.expr.NamedPrefixSet;
+import org.batfish.datamodel.routing_policy.statement.AddCommunity;
+import org.batfish.datamodel.routing_policy.statement.DeleteCommunity;
+import org.batfish.datamodel.routing_policy.statement.If;
+import org.batfish.datamodel.routing_policy.statement.SetAdministrativeCost;
+import org.batfish.datamodel.routing_policy.statement.SetCommunity;
+import org.batfish.datamodel.routing_policy.statement.SetLocalPreference;
+import org.batfish.datamodel.routing_policy.statement.SetMetric;
+import org.batfish.datamodel.routing_policy.statement.SetWeight;
+import org.batfish.datamodel.routing_policy.statement.Statement;
+import org.batfish.multigraph.EdgeCost;
+import org.batfish.symbolic.CommunityVar;
 import org.batfish.symbolic.Graph;
 import org.batfish.symbolic.GraphEdge;
 import org.batfish.symbolic.Protocol;
 import org.batfish.tiramisu.NodeType;
 import org.batfish.tiramisu.rag.Rag;
-import org.batfish.tiramisu.rag.RagNode;
 import org.batfish.tiramisu.rag.buildRag;
-import org.batfish.tiramisu.verify.PolicyVerify;
-import org.batfish.tiramisu.verify.policy.BLOCK;
+
 
 public class buildTpg implements Runnable {
 
@@ -32,6 +64,11 @@ public class buildTpg implements Runnable {
     private Map<String, TpgNode> multigraphNode;
     private Map<String, Set<TpgNode>> phyNodeMap;
     private Map<String, Set<TpgEdge>> phyEdgeMap;
+
+    public Map<String, Set<String>> _actCommunity;
+    public Map<String, Set<String>> _addCommunity;
+    public Map<String, Set<String>> _removeCommunity;
+    public Map<String, Map<String, EdgeCost>> _routerCommunityLp;
 
     IpWildcard srcIp;
     IpWildcard dstIp;
@@ -143,8 +180,18 @@ public class buildTpg implements Runnable {
             List<GraphEdge> edges = entry.getValue();
             for (GraphEdge e : edges) {
                 if (e.getRouter()!=null && e.getPeer()!=null) {
-                    tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_IN,e.getPeer()));
-                    tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_OUT,e.getPeer()));
+//                    tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_IN,e.getPeer()));
+//                    tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_OUT,e.getPeer()));
+                    if(blockAcl(e.getStart(),true)){
+                        tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_OUT,e.getPeer(),true));
+                    }else{
+                        tpg.addNode(new TpgNode(e.getRouter(), Protocol.CONNECTED, NodeType.VLAN_OUT,e.getPeer(),false));
+                    }
+                    if(blockAcl(e.getEnd(),false)){
+                        tpg.addNode(new TpgNode(e.getPeer(), Protocol.CONNECTED, NodeType.VLAN_IN,e.getRouter(),true));
+                    }else{
+                        tpg.addNode(new TpgNode(e.getPeer(), Protocol.CONNECTED, NodeType.VLAN_IN,e.getRouter(),false));
+                    }
                 }
             }
         }
@@ -152,8 +199,6 @@ public class buildTpg implements Runnable {
     }
 
     public void buildTpgEdges() {
-
-        //TODO: ADD EDGE FROM RIB CORRECTLY BASED ON TAINTS
         for (String router:g.getRouters()) {
             //Layers 1 & 2
             for (TpgNode node : tpg.selectNodes(null, null, NodeType.VLAN_IN, router)) {
@@ -239,7 +284,206 @@ public class buildTpg implements Runnable {
             tpg.setDstNode(dstNode);
         }
     }
-//    public void addDependenceGraph(GraphEdge depEdge) {
+
+    public boolean blockAcl(Interface inter, boolean out) {
+        //Interface i = ge.getStart();
+        IpAccessList bound;
+        if(out){
+            bound = inter.getOutgoingFilter();
+        }else{
+            bound = inter.getIncomingFilter();
+        }
+
+        if (bound != null) {
+            for ( IpAccessListLine line : bound.getLines() ) {
+                if (line.getAction() == LineAction.DENY) {
+                    if ( line.getMatchCondition() instanceof MatchHeaderSpace) {
+                        MatchHeaderSpace mhs = (MatchHeaderSpace)line.getMatchCondition();
+
+                        if (mhs.getHeaderspace().getSrcIps() instanceof IpWildcardIpSpace &&
+                            mhs.getHeaderspace().getDstIps() instanceof IpWildcardIpSpace) {
+                            IpWildcardIpSpace srcWildCard = (IpWildcardIpSpace)mhs.getHeaderspace().getSrcIps();
+                            IpWildcardIpSpace dstWildCard = (IpWildcardIpSpace)mhs.getHeaderspace().getDstIps();
+                            if (srcWildCard.getIpWildcard().intersects(srcIp) &&
+                                dstWildCard.getIpWildcard().intersects(dstIp)) {
+                                //System.out.println("Blocked by ACL " + mhs.getHeaderspace().getSrcIps() +
+                                //    "\t" + mhs.getHeaderspace().getDstIps());
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public void buildCommunity(){
+        for (Entry<String, List<GraphEdge>> entry : g.getEdgeMap().entrySet()) {
+            String router = entry.getKey();
+            List<GraphEdge> edges = entry.getValue();
+            Configuration conf = g.getConfigurations().get(router);
+
+            for (Protocol proto : _protocols.get(router)) {
+                for (GraphEdge e : edges) {
+                    if (g.isEdgeUsed(conf, proto, e)) {
+                        if (proto.isBgp()) {
+                            RoutingPolicy importRP = g.findImportRoutingPolicy(router, proto, e);
+                            RoutingPolicy exportRP = g.findExportRoutingPolicy(router, proto, e);
+                            appliesCommunity(router, importRP);
+                            appliesCommunity(router, exportRP);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public void appliesCommunity (String router, RoutingPolicy rp) {
+        if (rp != null) {
+            //            appliesRP(router,rp.getStatements());
+            Configuration conf = g.getConfigurations().get(router);
+            //System.out.println("CHECK RP " + rp.getStatements()+"\n*****************");
+            for ( Statement st : rp.getStatements() ) {
+                if ( st instanceof If) {
+                    If i = (If) st;
+                    //System.out.println(i.getGuard()+"\t"+i.getTrueStatements()+"\t"+i.getFalseStatements());
+                    if (i.getGuard() instanceof Conjunction) {
+                        Conjunction cj = (Conjunction) i.getGuard();
+                        for (BooleanExpr be : cj.getConjuncts()) {
+                            if (be instanceof CallExpr) {
+                                CallExpr ce = (CallExpr) be;
+                                appliesRP(router, conf.getRoutingPolicies().get(ce.getCalledPolicyName()).getStatements());
+                            }
+                        }
+                    } else if (i.getGuard() instanceof MatchPrefixSet) {
+                        MatchPrefixSet m = (MatchPrefixSet) i.getGuard();
+                        if (m.getPrefixSet() instanceof NamedPrefixSet) {
+                            NamedPrefixSet x = (NamedPrefixSet) m.getPrefixSet();
+                            RouteFilterList fl = conf.getRouteFilterLists().get(x.getName());
+                            if (fl != null) {
+                                for ( RouteFilterLine line : fl.getLines() ) {
+                                    //System.out.println("IP. "+ line.getIpWildcard() +"\t"+i.getTrueStatements());
+                                    if (line.getIpWildcard().intersects(dstIp)) {
+                                        appliesRP(router, i.getTrueStatements());
+                                    }
+                                }
+                            }
+                        }
+                    } else if (i.getGuard() instanceof MatchCommunitySet) {
+                        MatchCommunitySet m = (MatchCommunitySet) i.getGuard();
+                        //System.out.println("@. " + m.getExpr() + "\t" +i.getTrueStatements());
+                        // Right now allow it. afterwards need to modify, when it is set
+                        CommunitySetExpr ce = m.getExpr();
+
+                        //LineAction la = ce.getAction();
+                        for (CommunityVar cv : collectCommunityVars(conf, ce)) {
+                            String cvName = ""+cv.getValue().replace("$","").replace("^","");
+                            if (isBlockedCommunity(router, cvName)) {
+                                _actCommunity.get(router).add(cvName);
+                                //System.out.println("Long - " + cvName);
+                            }
+                            setRouterCommunityCost(i.getTrueStatements(), router, cvName);
+                        }
+                        appliesRP(router, i.getTrueStatements());
+                    }
+                }
+            }
+            //System.out.println("############################");
+        }
+
+    }
+
+    public void setRouterCommunityCost(List<Statement> stmt, String router, String comm) {
+        EdgeCost ec = new EdgeCost();
+        boolean set = false;
+        for (Statement st : stmt) {
+            if ( st instanceof SetLocalPreference) {
+                SetLocalPreference i = (SetLocalPreference) st;
+                if (i.getLocalPreference() instanceof LiteralInt) {
+                    LiteralInt li = (LiteralInt) i.getLocalPreference();
+                    ec.setLP(li.getValue());
+                    set = true;
+                }
+            } else if ( st instanceof SetMetric) {
+                SetMetric i = (SetMetric) st;
+                if (i.getMetric() instanceof LiteralLong) {
+                    LiteralLong li = (LiteralLong) i.getMetric();
+                    ec.setMED(((int)li.getValue()));
+                    set = true;
+                }
+            }  else if ( st instanceof SetWeight) {
+                SetWeight i = (SetWeight) st;
+                if (i.getWeight() instanceof LiteralInt) {
+                    LiteralInt li = (LiteralInt) i.getWeight();
+                    ec.setWeight(li.getValue());
+                    set = true;
+                }
+            } else if ( st instanceof SetAdministrativeCost) {
+                SetAdministrativeCost i = (SetAdministrativeCost) st;
+                if (i.getAdmin() instanceof LiteralInt) {
+                    LiteralInt li = (LiteralInt) i.getAdmin();
+                    ec.setAD(li.getValue());
+                    set = true;
+                }
+            }
+        }
+        if (set)
+            _routerCommunityLp.get(router).put(comm, ec);
+    }
+
+    public void appliesRP(String router, List<Statement> stmts) {
+
+        Configuration conf = g.getConfigurations().get(router);
+        for (Statement stmt : stmts) {
+            if (stmt instanceof SetCommunity) {
+                SetCommunity sc = (SetCommunity) stmt;
+                for (CommunityVar cv : collectCommunityVars(conf, sc.getExpr())) {
+                    _addCommunity.get(router).add( cv.getValue().replace("$","").replace("^","") );
+                }
+            } else if (stmt instanceof AddCommunity) {
+                AddCommunity ac = (AddCommunity) stmt;
+                for (CommunityVar cv : collectCommunityVars(conf, ac.getExpr())) {
+                    _addCommunity.get(router).add( cv.getValue().replace("$","").replace("^","") );
+                }
+            } else if (stmt instanceof DeleteCommunity) {
+                DeleteCommunity dc = (DeleteCommunity) stmt;
+                for (CommunityVar cv : collectCommunityVars(conf, dc.getExpr())) {
+                    _removeCommunity.get(router).add( cv.getValue().replace("$","").replace("^","") );
+                }
+            } else if ( stmt instanceof If ) {
+                If i = (If) stmt;
+                // do nothing
+                //System.out.println("Check " + i.getGuard()+"\t"+i.getTrueStatements()+"\t"+i.getFalseStatements());
+            }
+
+        }
+
+    }
+
+    public boolean isBlockedCommunity(String router, String cvName) {
+        Configuration conf = g.getConfigurations().get(router);
+        _routerCommunityLp.put(router, new TreeMap<>());
+        for (Entry<String, CommunityList> entry : conf.getCommunityLists().entrySet()) {
+            String name = entry.getKey();
+            CommunityList cl = entry.getValue();
+            for (CommunityListLine cll : cl.getLines()) {
+                CommunitySetExpr matchCondition = cll.getMatchCondition();
+                LineAction la = cll.getAction();
+
+                for (CommunityVar cv : collectCommunityVars(conf, matchCondition)) {
+                    if(la  == LineAction.DENY && cv.asLong()!=null) {
+                        String thisCvName = "" + cv.getValue().replace("$","").replace("^","");
+                        //System.out.println(thisCvName + "\tX\t" + cvName);
+                        if (thisCvName.equals(cvName))
+                            return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+    //    public void addDependenceGraph(GraphEdge depEdge) {
 //
 //        String prefix = intfName(depEdge.getRouter(), depEdge.getStart().getName());
 //
